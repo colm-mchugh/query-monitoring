@@ -22,3 +22,14 @@ func MinInt(x, y int) int {
 func MaxInt(x, y int) int {
 	return int(math.Max(float64(x), float64(y)))
 }
+
+// Rounding
+
+func Round(f float64) float64 {
+	return math.Floor(f + .5)
+}
+
+func RoundPlaces(f float64, places int) float64 {
+	shift := math.Pow(10, float64(places))
+	return Round(f*shift) / shift
+}

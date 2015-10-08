@@ -12,6 +12,7 @@ package system
 import (
 	"github.com/couchbase/query/datastore"
 	"github.com/couchbase/query/errors"
+	"github.com/couchbase/query/logging"
 )
 
 type namespace struct {
@@ -52,7 +53,9 @@ func (p *namespace) KeyspaceById(id string) (datastore.Keyspace, errors.Error) {
 }
 
 func (p *namespace) KeyspaceByName(name string) (datastore.Keyspace, errors.Error) {
+
 	b, ok := p.keyspaces[name]
+	logging.Infop("system.KeyspaceByName", logging.Pair{"name", name}, logging.Pair{"ok", ok})
 	if !ok {
 		return nil, errors.NewSystemKeyspaceNotFoundError(nil, name)
 	}
@@ -106,6 +109,25 @@ func (p *namespace) loadKeyspaces() (e errors.Error) {
 		return e
 	}
 	p.keyspaces[ib.Name()] = ib
+
+	preps, e := newPreparedsKeyspace(p)
+	if e != nil {
+		return e
+	}
+	p.keyspaces[preps.Name()] = preps
+
+	reqs, e := newRequestsKeyspace(p)
+	if e != nil {
+		return e
+	}
+	p.keyspaces[reqs.Name()] = reqs
+
+	actives, e := newActiveRequestsKeyspace(p)
+	if e != nil {
+		return e
+	}
+	p.keyspaces[actives.Name()] = actives
+	logging.Infop("newNamespace", logging.Pair{"actives.Name()", actives.Name()})
 
 	return nil
 }

@@ -94,6 +94,29 @@ type ScanConfiguration interface {
 	ScanVector() timestamp.Vector
 }
 
+// API for tracking active requests
+type ActiveRequests interface {
+	Put(Request) errors.Error
+	Get(string) (Request, errors.Error)
+	Delete(string) errors.Error
+	Count() (int, errors.Error)
+	ForEach(func(string, Request))
+}
+
+var actives ActiveRequests
+
+func ActiveRequestsCount() (int, errors.Error) {
+	return actives.Count()
+}
+
+func ActiveRequestsForEach(f func(string, Request)) {
+	actives.ForEach(f)
+}
+
+func SetActives(ar ActiveRequests) {
+	actives = ar
+}
+
 type BaseRequest struct {
 	// Aligned ints need to be delared right at the top
 	// of the struct to avoid alignment issues on x86 platforms

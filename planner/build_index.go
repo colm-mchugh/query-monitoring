@@ -10,9 +10,6 @@
 package planner
 
 import (
-	"fmt"
-	"strings"
-
 	"github.com/couchbase/query/algebra"
 	"github.com/couchbase/query/datastore"
 	"github.com/couchbase/query/plan"
@@ -100,9 +97,9 @@ func (this *builder) getNameKeyspace(ns, ks string) (datastore.Keyspace, error) 
 		ns = this.namespace
 	}
 
-	if strings.ToLower(ns) == "#system" {
-		return nil, fmt.Errorf("Index operations not allowed on system namespace.")
-	}
+	//if strings.ToLower(ns) == "#system" {
+	//return nil, fmt.Errorf("Index operations not allowed on system namespace.")
+	//}
 
 	datastore := this.datastore
 	namespace, err := datastore.NamespaceByName(ns)
