@@ -19,6 +19,7 @@ import (
 	"github.com/couchbase/query/logging"
 	"github.com/couchbase/query/plan"
 	"github.com/couchbase/query/server"
+	"github.com/couchbase/query/value"
 	"github.com/gorilla/mux"
 )
 
@@ -47,6 +48,9 @@ func (this *HttpEndpoint) registerAccountingHandlers() {
 	vitalsHandler := func(w http.ResponseWriter, req *http.Request) {
 		this.wrapAPI(w, req, doVitals)
 	}
+	preparedHandler := func(w http.ResponseWriter, req *http.Request) {
+		this.wrapAPI(w, req, doPrepared)
+	}
 	preparedsHandler := func(w http.ResponseWriter, req *http.Request) {
 		this.wrapAPI(w, req, doPrepareds)
 	}
@@ -64,6 +68,7 @@ func (this *HttpEndpoint) registerAccountingHandlers() {
 		accountingPrefix + "/{stat}":  {handler: statHandler, methods: []string{"GET", "DELETE"}},
 		vitalsPrefix:                  {handler: vitalsHandler, methods: []string{"GET"}},
 		preparedsPrefix:               {handler: preparedsHandler, methods: []string{"GET"}},
+		preparedsPrefix + "/{name}":   {handler: preparedHandler, methods: []string{"GET", "DELETE"}},
 		requestsPrefix:                {handler: requestsHandler, methods: []string{"GET"}},
 		requestsPrefix + "/{request}": {handler: requestHandler, methods: []string{"GET", "DELETE"}},
 	}
@@ -157,6 +162,24 @@ func doVitals(endpoint *HttpEndpoint, w http.ResponseWriter, req *http.Request) 
 	}
 }
 
+func doPrepared(endpoint *HttpEndpoint, w http.ResponseWriter, req *http.Request) (interface{}, errors.Error) {
+	vars := mux.Vars(req)
+	name := vars["name"]
+
+	switch req.Method {
+	case "DELETE":
+		err := plan.DeletePrepared(name)
+		if err != nil {
+			return nil, err
+		}
+		return true, nil
+	case "GET":
+		return plan.GetPrepared(value.NewValue(name))
+	default:
+		return nil, nil
+	}
+}
+
 func doPrepareds(endpoint *HttpEndpoint, w http.ResponseWriter, req *http.Request) (interface{}, errors.Error) {
 	switch req.Method {
 	case "GET":
@@ -180,13 +203,9 @@ func doActiveRequest(endpoint *HttpEndpoint, w http.ResponseWriter, req *http.Re
 			return nil, err
 		}
 
-		if r == nil {
-			return nil, nil
-		}
-
 		// Stop the request - requires casting to *http.Request
 		httpReq, is_http := r.(*httpRequest)
-		if !is_http {
+		if !is_http || httpReq == nil {
 			return nil, errors.NewServiceErrorHttpReq(request)
 		}
 		httpReq.Stop(server.STOPPED)

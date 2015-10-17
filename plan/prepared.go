@@ -258,7 +258,7 @@ func AddPrepared(prepared *Prepared) errors.Error {
 }
 
 func DeletePrepared(name string) errors.Error {
-	if cache.peekName(name) {
+	if !cache.peekName(name) {
 		return errors.NewNoSuchPreparedError(name)
 	}
 	cache.remove(name)
